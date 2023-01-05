@@ -8,9 +8,10 @@
     "test": "hardhat test",
     "clean": "hardhat clean",
     "pd:brown": "STAGE=pd NAME=brown hardhat run --no-compile --network matic_mainnet --config ./hardhat.config.ts",
-    "qa:brown": "STAGE=qa NAME=brown hardhat run --no-compile --network matic_mainnet --config ./hardhat.config.ts",
+    "qa:brown": "STAGE=qa NAME=brown hardhat run --no-compile --network matic_qa --config ./hardhat.config.ts",
     "pd:marcus": "STAGE=pd NAME=marcus hardhat run --network matic_mainnet --config ./hardhat.config.ts",
-    "qa:marcus": "STAGE=qa NAME=marcus hardhat run --network matic_qa --config ./hardhat.config.ts"
+    "qa:marcus": "STAGE=qa NAME=marcus hardhat run --network matic_qa --config ./hardhat.config.ts",
+    "eth:marcus": "STAGE=pd NAME=marcus hardhat run --network mainnet --config ./hardhat.config.ts"
   },
   "repository": {
     "type": "git",

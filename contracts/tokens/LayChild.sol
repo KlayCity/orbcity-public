@@ -15,7 +15,7 @@ import "../utils/ERC20Freezable.sol";
 import "../utils/IChildToken.sol";
 import "../utils/NativeMetaTransaction.sol";
 
-contract Orb is
+contract LayChild is
     IChildToken,
     Ownable,
     AccessControlEnumerable,
@@ -28,9 +28,6 @@ contract Orb is
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant DEPOSITOR_ROLE = keccak256("DEPOSITOR_ROLE");
-    bytes32 public constant PREDICATE_ROLE = keccak256("PREDICATE_ROLE");
-
-    uint256 public maxSupply = 1000000000e18;
     event Burn(address indexed from, uint256 value);
 
     constructor(string memory name, string memory symbol) ERC20(name, symbol) {
@@ -40,9 +37,6 @@ contract Orb is
         _setupRole(PAUSER_ROLE, _msgSender());
         _setupRole(WITHDRAWER_ROLE, _msgSender());
         _setupRole(DEPOSITOR_ROLE, address(0xA6FA4fB5f76172d178d61B04b0ecd319C5d1C0aa));
-        _setupRole(PREDICATE_ROLE, address(0x9923263fA127b3d1484cFD649df8f1831c2A74e4));
-        _mint(_msgSender(), maxSupply);
-        _initializeEIP712(name);
     }
 
     function msgSender() internal view returns (address payable sender) {
@@ -72,7 +66,7 @@ contract Orb is
      * @param depositData abi encoded amount
      */
     function deposit(address user, bytes calldata depositData) external override {
-        require(hasRole(DEPOSITOR_ROLE, _msgSender()), "deposit: must have depositor role to mint");
+        require(hasRole(DEPOSITOR_ROLE, _msgSender()), "deposit: must have depositor role to freeze");
         uint256 amount = abi.decode(depositData, (uint256));
         _mint(user, amount);
     }
@@ -87,7 +81,7 @@ contract Orb is
     }
 
     function mint(address to, uint256 amount) public virtual {
-        require(hasRole(PREDICATE_ROLE, _msgSender()), "ERC20PresetMinterPauser: must have minter role to mint");
+        require(hasRole(MINTER_ROLE, _msgSender()), "ERC20PresetMinterPauser: must have minter role to mint");
         _mint(to, amount);
     }
 
@@ -122,7 +116,7 @@ contract Orb is
     function burnFrom(address account, uint256 amount) public override {
         _spendAllowance(account, _msgSender(), amount);
         _transfer(account, address(0x000000000000000000000000000000000000dEaD), amount);
-        emit Burn(_msgSender(), amount);
+        emit Burn(account, amount);
     }
 
     function totalBurned() public view returns (uint256) {

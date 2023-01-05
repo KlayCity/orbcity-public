@@ -14,23 +14,22 @@ import "../utils/Withdrawable.sol";
 import "../utils/ERC20Freezable.sol";
 import "../utils/IChildToken.sol";
 import "../utils/NativeMetaTransaction.sol";
+import "../utils/IMintableERC20.sol";
 
-contract Orb is
-    IChildToken,
+contract LayRoot is
     Ownable,
     AccessControlEnumerable,
     ERC20Burnable,
     ERC20Pausable,
     Withdrawable,
     ERC20Freezable,
-    NativeMetaTransaction
+    NativeMetaTransaction,
+    IMintableERC20
 {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
-    bytes32 public constant DEPOSITOR_ROLE = keccak256("DEPOSITOR_ROLE");
     bytes32 public constant PREDICATE_ROLE = keccak256("PREDICATE_ROLE");
 
-    uint256 public maxSupply = 1000000000e18;
     event Burn(address indexed from, uint256 value);
 
     constructor(string memory name, string memory symbol) ERC20(name, symbol) {
@@ -39,10 +38,7 @@ contract Orb is
         _setupRole(MINTER_ROLE, _msgSender());
         _setupRole(PAUSER_ROLE, _msgSender());
         _setupRole(WITHDRAWER_ROLE, _msgSender());
-        _setupRole(DEPOSITOR_ROLE, address(0xA6FA4fB5f76172d178d61B04b0ecd319C5d1C0aa));
         _setupRole(PREDICATE_ROLE, address(0x9923263fA127b3d1484cFD649df8f1831c2A74e4));
-        _mint(_msgSender(), maxSupply);
-        _initializeEIP712(name);
     }
 
     function msgSender() internal view returns (address payable sender) {
@@ -63,31 +59,8 @@ contract Orb is
         return msgSender();
     }
 
-    /**
-     * @notice called when token is deposited on root chain
-     * @dev Should be callable only by ChildChainManager
-     * Should handle deposit by minting the required amount for user
-     * Make sure minting is done only by this function
-     * @param user user address for whom deposit is being done
-     * @param depositData abi encoded amount
-     */
-    function deposit(address user, bytes calldata depositData) external override {
-        require(hasRole(DEPOSITOR_ROLE, _msgSender()), "deposit: must have depositor role to mint");
-        uint256 amount = abi.decode(depositData, (uint256));
-        _mint(user, amount);
-    }
-
-    /**
-     * @notice called when user wants to withdraw tokens back to root chain
-     * @dev Should burn user's tokens. This transaction will be verified when exiting on root chain
-     * @param amount amount of tokens to withdraw
-     */
-    function withdraw(uint256 amount) external {
-        _burn(_msgSender(), amount);
-    }
-
-    function mint(address to, uint256 amount) public virtual {
-        require(hasRole(PREDICATE_ROLE, _msgSender()), "ERC20PresetMinterPauser: must have minter role to mint");
+    function mint(address to, uint256 amount) external override {
+        require(hasRole(PREDICATE_ROLE, _msgSender()), "mint: must have PREDICATE_ROLE to mint");
         _mint(to, amount);
     }
 
@@ -122,7 +95,7 @@ contract Orb is
     function burnFrom(address account, uint256 amount) public override {
         _spendAllowance(account, _msgSender(), amount);
         _transfer(account, address(0x000000000000000000000000000000000000dEaD), amount);
-        emit Burn(_msgSender(), amount);
+        emit Burn(account, amount);
     }
 
     function totalBurned() public view returns (uint256) {

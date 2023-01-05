@@ -17,10 +17,7 @@ abstract contract ERC20Freezable is ERC20 {
         address to,
         uint256 amount
     ) internal virtual override {
-        require(
-            frozenAccount[msg.sender] == 0 || !(balanceOf(msg.sender) - amount < frozenAccount[msg.sender]),
-            "frozen account"
-        );
+        require(frozenAccount[from] == 0 || !(balanceOf(from) - amount < frozenAccount[from]), "frozen account");
         super._beforeTokenTransfer(from, to, amount);
     }
 

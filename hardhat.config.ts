@@ -37,9 +37,19 @@ const config: HardhatUserConfig = {
       accounts: [process.env.MAINNET_PRIVATEKEY || ''],
       chainId: 137,
     },
+    mainnet: {
+      url: 'https://mainnet.infura.io/v3/4e68f30fabb34767ac2cc43ef3b477f7',
+      accounts: [process.env.MAINNET_PRIVATEKEY || ''],
+      chainId: 1,
+    },
     matic_qa: {
-      url: 'https://polygon-rpc.com',
-      accounts: [process.env.TESTNET_PRIVATEKEY || ''],
+      //url: 'https://polygon-rpc.com',
+      url: 'https://rpc-mainnet.matic.quiknode.pro',
+      //url: 'https://polygon-mainnet.infura.io/v3/4e68f30fabb34767ac2cc43ef3b477f7',
+      accounts: [
+        process.env.TESTNET_PRIVATEKEY || '',
+        process.env.TESTER_PRIVATEKEY || '',
+      ],
       chainId: 137,
     },
   },
@@ -47,7 +57,7 @@ const config: HardhatUserConfig = {
     timeout: 400000,
   },
   etherscan: {
-    apiKey: 'UMGWVAX629D4J5BZNHX75AF84STA4FUV32',
+    apiKey: '',
   },
 };
 

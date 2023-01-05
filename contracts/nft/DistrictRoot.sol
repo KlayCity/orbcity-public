@@ -19,7 +19,7 @@ import "../utils/IChildToken.sol";
 import "../utils/NativeMetaTransaction.sol";
 import "../utils/IMintableERC721.sol";
 
-contract District is
+contract DistrictRoot is
     Ownable,
     AccessControlEnumerable,
     ERC721Enumerable,
@@ -28,16 +28,16 @@ contract District is
     ERC721URIStorage,
     ERC721Royalty,
     Withdrawable,
-    ERC721Freezable
+    ERC721Freezable,
+    NativeMetaTransaction,
+    IMintableERC721
 {
     using Counters for Counters.Counter;
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant TRANSFER_ROLE = keccak256("TRANSFER_ROLE");
-    bytes32 public constant DEPOSITOR_ROLE = keccak256("DEPOSITOR_ROLE");
     bytes32 public constant PREDICATE_ROLE = keccak256("PREDICATE_ROLE");
 
-    Counters.Counter private _tokenIdTracker;
     string public _baseTokenURI;
     bool public useTransferRole = false;
 
@@ -52,8 +52,27 @@ contract District is
         _setupRole(WITHDRAWER_ROLE, _msgSender());
         _setupRole(PAUSER_ROLE, _msgSender());
         _setupRole(TRANSFER_ROLE, _msgSender());
+        _setupRole(PREDICATE_ROLE, address(0x932532aA4c0174b8453839A6E44eE09Cc615F2b7));
         _baseTokenURI = baseTokenURI;
-        mint(_msgSender());
+        _initializeEIP712(name);
+    }
+
+    function msgSender() internal view returns (address payable sender) {
+        if (msg.sender == address(this)) {
+            bytes memory array = msg.data;
+            uint256 index = msg.data.length;
+            assembly {
+                // Load the 32 bytes word from memory with the address on the lower 20 bytes, and mask those.
+                sender := and(mload(add(array, index)), 0xffffffffffffffffffffffffffffffffffffffff)
+            }
+        } else {
+            sender = payable(msg.sender);
+        }
+        return sender;
+    }
+
+    function _msgSender() internal view override returns (address) {
+        return msgSender();
     }
 
     function setActivateTransferRole(bool flag) public {
@@ -77,14 +96,6 @@ contract District is
 
     function tokenURI(uint256 tokenId) public view virtual override(ERC721, ERC721URIStorage) returns (string memory) {
         return super.tokenURI(tokenId);
-    }
-
-    function mint(address to) public returns (uint256 tokenId) {
-        require(hasRole(MINTER_ROLE, _msgSender()), "mint: must have minter role to mint");
-
-        tokenId = _tokenIdTracker.current();
-        _mint(to, tokenId);
-        _tokenIdTracker.increment();
     }
 
     function pause() public virtual {
@@ -133,13 +144,13 @@ contract District is
         public
         view
         virtual
-        override(ERC721, AccessControlEnumerable, ERC721Enumerable, ERC721Royalty)
+        override(ERC721, AccessControlEnumerable, ERC721Enumerable, ERC721Royalty, IERC165)
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
     }
 
-    function approve(address to, uint256 tokenId) public virtual override(ERC721, ERC721Freezable) {
+    function approve(address to, uint256 tokenId) public virtual override(ERC721, ERC721Freezable, IERC721) {
         super.approve(to, tokenId);
     }
 
@@ -151,5 +162,54 @@ contract District is
         }
 
         return result;
+    }
+
+    /**
+     * @dev See {IMintableERC721-mint}.
+     */
+    function mint(address user, uint256 tokenId) external override {
+        require(hasRole(PREDICATE_ROLE, _msgSender()), "mint: must have minter role to mint");
+        _mint(user, tokenId);
+    }
+
+    /**
+     * If you're attempting to bring metadata associated with token
+     * from L2 to L1, you must implement this method, to be invoked
+     * when minting token back on L1, during exit
+     */
+    function setTokenMetadata(uint256 tokenId, bytes memory data) internal virtual {
+        // This function should decode metadata obtained from L2
+        // and attempt to set it for this `tokenId`
+        //
+        // Following is just a default implementation, feel
+        // free to define your own encoding/ decoding scheme
+        // for L2 -> L1 token metadata transfer
+        string memory uri = abi.decode(data, (string));
+
+        _setTokenURI(tokenId, uri);
+    }
+
+    /**
+     * @dev See {IMintableERC721-mint}.
+     *
+     * If you're attempting to bring metadata associated with token
+     * from L2 to L1, you must implement this method
+     */
+    function mint(
+        address user,
+        uint256 tokenId,
+        bytes calldata metaData
+    ) external override {
+        require(hasRole(PREDICATE_ROLE, _msgSender()), "mint: must have minter role to mint");
+        _mint(user, tokenId);
+        setTokenMetadata(tokenId, metaData);
+    }
+
+    /**
+     * @dev See {IMintableERC721-exists}.
+     */
+
+    function exists(uint256 tokenId) external view override returns (bool) {
+        return _exists(tokenId);
     }
 }

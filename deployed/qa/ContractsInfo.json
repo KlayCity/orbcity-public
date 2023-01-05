@@ -13999,8 +13999,8 @@
   },
   "Council": {
     "chainId": "137",
-    "address": "0x4a6D85EA74C7B22A634C2f01d088e67bEeED7942",
-    "blockNumber": 37443598,
+    "address": "0xDF22F373ED51fe6431393f4382F5081aAC1CE3D6",
+    "blockNumber": 37364443,
     "abi": [
       {
         "inputs": [],
@@ -15309,8 +15309,8 @@
   },
   "CandidateVoting": {
     "chainId": "137",
-    "address": "0x8C537Cf510d6a6643dB350688C1b84fc05CCc4b0",
-    "blockNumber": 37443601,
+    "address": "0xEd25B1a77a36403075ab8fcF5A3D1C087A345535",
+    "blockNumber": 37364446,
     "abi": [
       {
         "inputs": [],

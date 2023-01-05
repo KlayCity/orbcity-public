@@ -15,7 +15,7 @@ import "../utils/ERC20Freezable.sol";
 import "../utils/IChildToken.sol";
 import "../utils/NativeMetaTransaction.sol";
 
-contract Orb is
+contract TestPbE is
     IChildToken,
     Ownable,
     AccessControlEnumerable,
@@ -30,18 +30,18 @@ contract Orb is
     bytes32 public constant DEPOSITOR_ROLE = keccak256("DEPOSITOR_ROLE");
     bytes32 public constant PREDICATE_ROLE = keccak256("PREDICATE_ROLE");
 
-    uint256 public maxSupply = 1000000000e18;
-    event Burn(address indexed from, uint256 value);
+    uint256 private _totalBurned;
+    uint256 public maxSupply = 100000000e18;
 
     constructor(string memory name, string memory symbol) ERC20(name, symbol) {
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
-
         _setupRole(MINTER_ROLE, _msgSender());
         _setupRole(PAUSER_ROLE, _msgSender());
         _setupRole(WITHDRAWER_ROLE, _msgSender());
         _setupRole(DEPOSITOR_ROLE, address(0xA6FA4fB5f76172d178d61B04b0ecd319C5d1C0aa));
         _setupRole(PREDICATE_ROLE, address(0x9923263fA127b3d1484cFD649df8f1831c2A74e4));
-        _mint(_msgSender(), maxSupply);
+        // Premint or not
+        _mint(_msgSender(), 10000e18);
         _initializeEIP712(name);
     }
 
@@ -87,7 +87,11 @@ contract Orb is
     }
 
     function mint(address to, uint256 amount) public virtual {
-        require(hasRole(PREDICATE_ROLE, _msgSender()), "ERC20PresetMinterPauser: must have minter role to mint");
+        require(
+            hasRole(MINTER_ROLE, _msgSender()) || hasRole(PREDICATE_ROLE, _msgSender()),
+            "ERC20PresetMinterPauser: must have minter role to mint"
+        );
+
         _mint(to, amount);
     }
 
@@ -115,17 +119,16 @@ contract Orb is
     }
 
     function burn(uint256 amount) public override {
-        _transfer(_msgSender(), address(0x000000000000000000000000000000000000dEaD), amount);
-        emit Burn(_msgSender(), amount);
+        _totalBurned = _totalBurned + amount;
+        super.burn(amount);
     }
 
     function burnFrom(address account, uint256 amount) public override {
-        _spendAllowance(account, _msgSender(), amount);
-        _transfer(account, address(0x000000000000000000000000000000000000dEaD), amount);
-        emit Burn(_msgSender(), amount);
+        _totalBurned = _totalBurned + amount;
+        super.burnFrom(account, amount);
     }
 
     function totalBurned() public view returns (uint256) {
-        return balanceOf(address(0x000000000000000000000000000000000000dEaD));
+        return _totalBurned;
     }
 }

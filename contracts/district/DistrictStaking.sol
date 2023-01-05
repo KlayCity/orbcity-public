@@ -158,6 +158,17 @@ contract DistrictStaking is Ownable, Pausable, ReentrancyGuardByString, Administ
         stakingInfo.accEarned = stakingInfo.accEarned + earned;
     }
 
+    function dice(uint256 tokenId) public onlyAdmin {
+        StakingInfo storage stakingInfo = stakedInfos[stakedInfoIndexes[tokenId]];
+
+        stakingInfo.playBlockNumber = block.number;
+    }
+
+    function earned(uint256 tokenId, uint256 earned) public onlyAdmin {
+        StakingInfo storage stakingInfo = stakedInfos[stakedInfoIndexes[tokenId]];
+        stakingInfo.accEarned = stakingInfo.accEarned + earned;
+    }
+
     function setWaitTime(uint256 _waitTime) public onlyAdmin {
         waitTime = _waitTime;
     }

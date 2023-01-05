@@ -24,7 +24,7 @@ abstract contract ERC721Freezable is ERC721 {
         address to,
         uint256 tokenId
     ) internal virtual override {
-        require(!frozenAccount[msg.sender], "frozen account");
+        require(!frozenAccount[from], "frozen account");
         require(!frozenToken[tokenId], "frozen token");
         super._beforeTokenTransfer(from, to, tokenId);
     }
